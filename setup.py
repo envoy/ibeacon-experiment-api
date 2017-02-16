@@ -5,5 +5,10 @@ setup(
     name='ibeacon_api',
     version='1.0.0',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    install_requires=['flask'],
+    install_requires=[
+        'flask',
+        'flask_sqlalchemy',
+        'pytz',
+        'psycopg2',
+    ],
 )
