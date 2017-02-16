@@ -87,10 +87,13 @@ def sign_ins():
 
 @app.route("/upload-log", methods=['PUT'])
 def upload_log():
-    user = db.session.query(User).get(request.form['user_id'])
-    f = request.files['log']
+    data = request.data.decode('utf8')
+    lines = data.splitlines()
+    user_id = lines[0].strip()
+    user = db.session.query(User).get(user_id)
+
     log = None
-    for line in f.readlines():
+    for line in lines[1:]:
         line = line.strip()
         if not line:
             continue
@@ -108,8 +111,6 @@ def upload_log():
         db.session.add(log)
     db.session.commit()
     return log.id if log is not None else ''
-
-
 
 
 if __name__ == "__main__":
