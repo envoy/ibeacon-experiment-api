@@ -1,7 +1,9 @@
 import os
 import datetime
-import pytz
+import json
+import iso8601
 
+import pytz
 from flask import Flask
 from flask import request
 from flask_sqlalchemy import SQLAlchemy
@@ -54,7 +56,7 @@ class SignIn(db.Model):
 class Log(db.Model):
     __tablename__ = 'logs'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String(64), primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     event = db.Column(db.String(64))
     message = db.Column(db.Text)
@@ -83,10 +85,29 @@ def sign_ins():
     return str(signin.id)
 
 
-@app.route("/upload-log")
+@app.route("/upload-log", methods=['PUT'])
 def upload_log():
-    # TODO: handle uploaded log file from iPhone
-    return 'FIXME'
+    user = db.session.query(User).get(request.form['user_id'])
+    f = request.files['log']
+    log = None
+    for line in f.readlines():
+        line = line.strip()
+        if not line:
+            continue
+        data = json.loads(line)
+        existing_log = db.session.query(Log).filter_by(id=data['id']).first()
+        if existing_log is not None:
+            # looks like the log already exists, just skip it
+            continue
+        log = Log(
+            id=data['id'],
+            event=data['event'],
+            message=data['message'],
+            created_at=iso8601.parse_date(data['created_at']),
+        )
+        db.session.add(log)
+    db.session.commit()
+    return log.id if log is not None else ''
 
 
 

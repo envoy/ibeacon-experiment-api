@@ -10,5 +10,6 @@ setup(
         'flask_sqlalchemy',
         'pytz',
         'psycopg2',
+        'iso8601',
     ],
 )
