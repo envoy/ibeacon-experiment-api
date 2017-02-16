@@ -49,7 +49,7 @@ class SignIn(db.Model):
     __tablename__ = 'signins'
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=pst_now)
 
 
@@ -57,7 +57,7 @@ class Log(db.Model):
     __tablename__ = 'logs'
 
     id = db.Column(db.String(64), primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     event = db.Column(db.String(64))
     message = db.Column(db.Text)
     created_at = db.Column(db.DateTime)
@@ -103,6 +103,7 @@ def upload_log():
             # looks like the log already exists, just skip it
             continue
         log = Log(
+            user=user,
             id=data['id'],
             event=data['event'],
             message=data['message'],
