@@ -6,18 +6,20 @@ import iso8601
 import pytz
 from flask import Flask
 from flask import request
+from flask import jsonify
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
 db = SQLAlchemy(app)
+pst_tz = pytz.timezone('America/Los_Angeles')
 
 
 def pst_now():
     utcnow = datetime.datetime.utcnow()
     utcnow = utcnow.replace(tzinfo=pytz.utc)
-    return utcnow.astimezone(pytz.timezone('America/Los_Angeles'))
+    return utcnow.astimezone(pst_tz)
 
 
 class User(db.Model):
@@ -26,7 +28,7 @@ class User(db.Model):
     username = db.Column(db.String(64), unique=True)
     device_model = db.Column(db.String(64))
     os_version = db.Column(db.String(64))
-    created_at = db.Column(db.DateTime, default=pst_now)
+    created_at = db.Column(db.DateTime(timezone=True), default=pst_now)
 
     sign_ins = db.relationship(
         'SignIn',
@@ -50,7 +52,7 @@ class SignIn(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=pst_now)
+    created_at = db.Column(db.DateTime(timezone=True), default=pst_now)
 
 
 class Log(db.Model):
@@ -60,12 +62,12 @@ class Log(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     event = db.Column(db.String(64))
     message = db.Column(db.Text)
-    created_at = db.Column(db.DateTime)
-    uploaded_at = db.Column(db.DateTime, default=pst_now)
+    created_at = db.Column(db.DateTime(timezone=True))
+    uploaded_at = db.Column(db.DateTime(timezone=True), default=pst_now)
 
 
 @app.route("/users", methods=['POST'])
-def users():
+def create_user():
     user = User(
         username=request.form['username'],
         device_model=request.form['device_model'],
@@ -74,6 +76,11 @@ def users():
     db.session.add(user)
     db.session.commit()
     return str(user.id)
+
+
+@app.route("/users", methods=['GET'])
+def list_users():
+    return jsonify([item[0] for item in db.session.query(User.username)])
 
 
 @app.route("/sign-ins", methods=['POST'])
@@ -107,7 +114,7 @@ def upload_log():
             id=data['id'],
             event=data['event'],
             message=data['message'],
-            created_at=iso8601.parse_date(data['created_at']),
+            created_at=iso8601.parse_date(data['created_at']).astimezone(pst_tz),
         )
         db.session.add(log)
     db.session.commit()
