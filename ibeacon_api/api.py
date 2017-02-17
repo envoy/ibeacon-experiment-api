@@ -82,7 +82,9 @@ def create_user():
 def list_users():
     return jsonify(list(map(
         lambda row: dict(id=row[0], name=row[1]),
-        db.session.query(User.id, User.username).order_by(User.username))
+        db.session.query(User.id, User.username)
+            .filter(User.username != 'ipad')
+            .order_by(User.username))
     ))
 
 
