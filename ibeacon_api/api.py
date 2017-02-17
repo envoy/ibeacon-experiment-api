@@ -80,7 +80,10 @@ def create_user():
 
 @app.route("/users", methods=['GET'])
 def list_users():
-    return jsonify([item[0] for item in db.session.query(User.username)])
+    return jsonify(list(map(
+        lambda row: dict(id=row[0], name=row[1]),
+        db.session.query(User.id, User.username).order_by(User.username))
+    ))
 
 
 @app.route("/sign-ins", methods=['POST'])
