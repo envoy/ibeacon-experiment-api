@@ -26,6 +26,7 @@ class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True)
+    envoy_user_id = db.Column(db.String(64))
     device_model = db.Column(db.String(64))
     os_version = db.Column(db.String(64))
     created_at = db.Column(db.DateTime(timezone=True), default=pst_now)
@@ -41,10 +42,11 @@ class User(db.Model):
         lazy='dynamic',
     )
 
-    def __init__(self, username, device_model, os_version):
+    def __init__(self, username, device_model, os_version, envoy_user_id=None):
         self.username = username
         self.device_model = device_model
         self.os_version = os_version
+        self.envoy_user_id = envoy_user_id
 
 
 class SignIn(db.Model):
@@ -72,6 +74,7 @@ def create_user():
         username=request.form['username'],
         device_model=request.form['device_model'],
         os_version=request.form['os_version'],
+        envoy_user_id=request.form.get('envoy_user_id'),
     )
     db.session.add(user)
     db.session.commit()
@@ -84,6 +87,7 @@ def list_users():
         lambda row: dict(id=row[0], name=row[1]),
         db.session.query(User.id, User.username)
             .filter(User.username != 'ipad')
+            .filter(User.envoy_user_id == None)
             .order_by(User.username))
     ))
 
